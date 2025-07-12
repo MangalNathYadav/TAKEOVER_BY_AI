@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Job Market Analysis Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --danger: #f72585;
+            --warning: #f77f00;
+            --success: #4cc9f0;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem 0;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            animation: pulse 15s infinite linear;
+        }
+        
+        @keyframes pulse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+            padding: 0 2rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .license-badge {
+            background-color: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .last-updated {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            background-color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .legend {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-items {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .risk-high {
+            color: var(--danger);
+        }
+        
+        .risk-medium {
+            color: var(--warning);
+        }
+        
+        .risk-low {
+            color: var(--success);
+        }
+        
+        .search-filter {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        .risk-filter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .risk-filter select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .job-table {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .risk-cell {
+            font-weight: 700;
+            text-align: center;
+            width: 60px;
+        }
+        
+        .risk-10, .risk-9, .risk-8 {
+            background-color: rgba(247, 37, 133, 0.1);
+            color: var(--danger);
+        }
+        
+        .risk-7, .risk-6, .risk-5 {
+            background-color: rgba(247, 127, 0, 0.1);
+            color: var(--warning);
+        }
+        
+        .risk-4, .risk-3, .risk-2, .risk-1 {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+        
+        .job-title {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .job-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .pivot-advice {
+            font-size: 0.9rem;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid var(--accent);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .contributions {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .contributions h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .contributions ul {
+            list-style-type: none;
+        }
+        
+        .contributions li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .contributions li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+        
+        .credits {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .credits h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .credit-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .search-filter {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-robot"></i>
+                    AI-Driven Job Market Analysis
+                </h1>
+                <div class="license-badge">
+                    <i class="fas fa-balance-scale"></i> MIT License
+                </div>
+                <div class="subtitle">
+                    Comprehensive analysis of how AI is disrupting 300+ roles across 7 major industries
+                </div>
+                <div class="last-updated">
+                    <i class="far fa-calendar-alt"></i> Last Updated: July 2025
+                </div>
+            </div>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="tech">
+                <i class="fas fa-laptop-code"></i> Tech & Software
+            </div>
+            <div class="tab" data-tab="design">
+                <i class="fas fa-paint-brush"></i> Design & Creative
+            </div>
+            <div class="tab" data-tab="business">
+                <i class="fas fa-briefcase"></i> Business & Marketing
+            </div>
+            <div class="tab" data-tab="healthcare">
+                <i class="fas fa-heartbeat"></i> Healthcare & Biotech
+            </div>
+            <div class="tab" data-tab="finance">
+                <i class="fas fa-chart-line"></i> Finance & Legal
+            </div>
+            <div class="tab" data-tab="education">
+                <i class="fas fa-graduation-cap"></i> Education & Training
+            </div>
+            <div class="tab" data-tab="emerging">
+                <i class="fas fa-rocket"></i> Emerging/Hybrid Roles
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-title">
+                <i class="fas fa-info-circle"></i> Risk Scale Legend
+            </div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="risk-high">🔴 8-10</span> High Risk
+                </div>
+                <div class="legend-item">
+                    <span class="risk-medium">🟠 5-7</span> Medium Risk
+                </div>
+                <div class="legend-item">
+                    <span class="risk-low">🟢 1-4</span> Low Risk
+                </div>
+            </div>
+        </div>
+        
+        <div class="search-filter">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search job roles...">
+            </div>
+            <div class="risk-filter">
+                <label for="riskFilter"><i class="fas fa-filter"></i> Filter by Risk:</label>
+                <select id="riskFilter">
+                    <option value="all">All Risk Levels</option>
+                    <option value="high">High Risk (8-10)</option>
+                    <option value="medium">Medium Risk (5-7)</option>
+                    <option value="low">Low Risk (1-4)</option>
+                </select>
+            </div>
+        </div>
+        
+        <h2 class="section-title fade-in" id="currentSection">
+            <i class="fas fa-laptop-code"></i> Tech & Software
+        </h2>
+        
+        <div class="job-table">
+            <table id="jobTable">
+                <thead>
+                    <tr>
+                        <th>Risk</th>
+                        <th>Job Role</th>
+                        <th>Description</th>
+                        <th>Pivot Advice</th>
+                    </tr>
+                </thead>
+                <tbody id="techJobs">
+                    <!-- Tech & Software jobs will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="contributions">
+            <h3><i class="fas fa-hands-helping"></i> How to Contribute</h3>
+            <ul>
+                <li>Fork the repository and create a feature branch</li>
+                <li>Add your analysis or update existing content</li>
+                <li>Submit a pull request with your changes</li>
+                <li>Contributions especially welcome for additional industry sectors</li>
+                <li>Updated risk assessments based on new AI capabilities</li>
+                <li>Enhanced pivot advice with specific learning resources</li>
+                <li>Regional job market variations</li>
+            </ul>
+        </div>
+        
+        <div class="credits">
+            <h3><i class="fas fa-star"></i> Credits</h3>
+            <div class="credit-item">
+                <i class="fas fa-robot"></i> Improved by Claude Sonnet 3.7
+            </div>
+            <div class="credit-item">
+                <i class="fas fa-brain"></i> Generated with ChatGPT-4o
+            </div>
+            <div class="credit-item">
+                <i class="fas fa-file-code"></i> Markdown conversion by Deepseek
+            </div>
+            <div class="credit-item">
+                <i class="fas fa-file-pdf"></i> PDF rendering by APITemplate
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This comprehensive job market analysis examines how AI may impact various career paths</p>
+            <p>Risk scores indicate likelihood of AI disruption (1=low, 10=high risk of automation)</p>
+        </div>
+    </div>
+
+    <script>
+        // Job data
+        const jobData = {
+            tech: [
+                {risk: 10, role: "Junior Web Developer", description: "Builds basic websites", advice: "Learn full-stack + AI-assisted dev; rely on nothing manual"},
+                {risk: 10, role: "Manual QA Tester", description: "Tests software manually", advice: "Switch to automated & AI-driven testing"},
+                {risk: 9, role: "Frontend Developer (Basic)", description: "UI components", advice: "Use AI tools like Copilot + React frameworks"},
+                {risk: 9, role: "Data Entry Specialist", description: "Inputs data", advice: "Pivot to data engineering or ML pipelines"},
+                {risk: 8, role: "IT Support Technician", description: "Tech support", advice: "Add chat-bot management + AI tools"},
+                {risk: 8, role: "Technical Writer", description: "Writes tech documentation", advice: "Shift to AI-generated docs and oversight"},
+                {risk: 8, role: "Software Trainer", description: "Teaches programming", advice: "Become AI tool trainer"},
+                {risk: 7, role: "Mobile App Developer", description: "Builds smartphone apps", advice: "Integrate AI & cross-platform tech"},
+                {risk: 7, role: "Backend Developer", description: "Server-side logic", advice: "Add AI integration, cloud-native approach"},
+                {risk: 7, role: "Network Engineer", description: "Manages networks", advice: "Implement AI-based monitoring"},
+                {risk: 7, role: "Embedded Systems Engineer", description: "Low-level programming", advice: "Learn AI-optimized embedded coding"},
+                {risk: 7, role: "Blockchain Developer", description: "Blockchain apps", advice: "Explore AI in smart contracts"},
+                {risk: 6, role: "DevOps Engineer", description: "Automates deployment", advice: "Learn AI-based CI/CD pipelines"},
+                {risk: 6, role: "Cybersecurity Analyst", description: "Detects threats", advice: "Adopt AI threat analytics"},
+                {risk: 6, role: "Database Administrator", description: "Manages databases", advice: "Shift into AI data optimization"},
+                {risk: 6, role: "Site Reliability Engineer", description: "Ensures uptime", advice: "Automate with AI tools"},
+                {risk: 5, role: "Full Stack Developer", description: "Front + back end", advice: "Continue AI code generation"},
+                {risk: 5, role: "Cloud Engineer", description: "Manages cloud infra", advice: "Become AI cloud services specialist"},
+                {risk: 5, role: "QA Automation Engineer", description: "Writes scripts for testing", advice: "Master AI testing tools"},
+                {risk: 5, role: "Software Architect", description: "Complex system design", advice: "Focus on AI integration"},
+                {risk: 5, role: "Game Developer", description: "Creates video games", advice: "Use AI for assets & gameplay"},
+                {risk: 5, role: "AI/ML Engineer", description: "Builds AI models", advice: "Stay updated continually"},
+                {risk: 4, role: "Firmware Engineer", description: "Low-level hardware software", advice: "Learn AI for IoT devices"},
+                {risk: 4, role: "Robotics Engineer", description: "Constructs robots", advice: "Merge robotics with AI"},
+                {risk: 4, role: "Database Developer", description: "DB applications development", advice: "Focus on AI-enhanced DB"},
+                {risk: 4, role: "Cybersecurity Expert", description: "Defends systems", advice: "Use AI in threat intelligence"},
+                {risk: 4, role: "Cloud Security Engineer", description: "Secures cloud infrastructures", advice: "Combine AI with cloud defense"},
+                {risk: 4, role: "Prompt Engineer", description: "Designs LLM prompts", advice: "High demand; future-proof"},
+                {risk: 4, role: "AI Research Scientist", description: "Pushes AI boundaries", advice: "Cutting-edge role"},
+                {risk: 4, role: "Automation Engineer", description: "Builds automated systems", advice: "AI-driven automation is key"},
+                {risk: 4, role: "Site Engineer (IT)", description: "On-site tech", advice: "Shift to remote AI monitoring"},
+                {risk: 4, role: "DevSecOps Engineer", description: "Security in DevOps", advice: "AI security orchestration needed"},
+                {risk: 4, role: "Cloud Solutions Architect", description: "Designs cloud systems", advice: "Integrate AI services"},
+                {risk: 3, role: "UX Researcher", description: "Studies user behavior", advice: "Combine with AI analytics"},
+                {risk: 3, role: "VR/AR Developer", description: "Immersive app creation", advice: "Learn spatial AI"},
+                {risk: 3, role: "NLP Engineer", description: "Natural language modeling", advice: "High-demand specialization"},
+                {risk: 3, role: "Automation Lead (AI)", description: "Leads AI adoption in infra", advice: "Fast-growing field"},
+                {risk: 2, role: "Computer Vision Engineer", description: "Image-based AI development", advice: "Stay ahead in CV tech"},
+                {risk: 2, role: "Industrial IoT Specialist", description: "Connects machines with AI", advice: "Critical for Smart Factories"},
+                {risk: 2, role: "AI Agent Architect", description: "Builds autonomous AI agents", advice: "Future-proof, high-demand role"},
+                {risk: 2, role: "Data Scientist", description: "Data insights with ML", advice: "Focus on explainable AI & causal inference"},
+                {risk: 2, role: "Cloud Infrastructure Engineer", description: "Builds cloud infra", advice: "AI orchestration skills needed"},
+                {risk: 2, role: "Smart Factory Architect", description: "Builds AI-driven factories", advice: "Industrial AI booming"},
+                {risk: 1, role: "Ethical Hacker", description: "Pen-tests systems", advice: "Use AI for pentesting"}
+            ],
+            design: [
+                {risk: 10, role: "Fashion Illustrator", description: "Sketches fashion ideas", advice: "Learn AI generators + 3D workflows"},
+                {risk: 10, role: "Graphic Designer (Basic)", description: "Creates visuals", advice: "Shift to AI-assisted design tools"},
+                {risk: 10, role: "Illustrator (Digital/Traditional)", description: "Draws art pieces", advice: "Combine AI art + human curation"},
+                {risk: 9, role: "Copywriter", description: "Writes marketing copy", advice: "Use AI content ideation + brand strategy"},
+                {risk: 9, role: "Content Creator", description: "Produces blogs/videos", advice: "Use AI for production plus strategy"},
+                {risk: 9, role: "Social Media Manager", description: "Manages social campaigns", advice: "Use AI scheduling & analytics"},
+                {risk: 9, role: "Layout Designer", description: "Design page layouts", advice: "AI automates basic layouts"},
+                {risk: 8, role: "Video Editor", description: "Edits videos", advice: "Use AI-assisted editing tools"},
+                {risk: 8, role: "Photographer", description: "Captures visuals", advice: "Add AI photo-retouching skills"},
+                {risk: 8, role: "Marketing Designer", description: "Designs marketing collaterals", advice: "Use AI for rapid iterations"},
+                {risk: 8, role: "Fashion Stylist", description: "Styles for shoots", advice: "Use AI trend analytics"},
+                {risk: 7, role: "Animator", description: "Creates animations", advice: "Use AI-assisted animation tools"},
+                {risk: 7, role: "UI Designer", description: "Designs digital interfaces", advice: "Blend with AI design tooling"},
+                {risk: 7, role: "UX Designer", description: "Creates user experiences", advice: "Integrate AI analytics & testing"},
+                {risk: 7, role: "Industrial Designer", description: "Designs products", advice: "Use AI generative design"},
+                {risk: 7, role: "Interior Designer", description: "Plans interior spaces", advice: "Add AI visualizer tools"},
+                {risk: 7, role: "Sound Engineer", description: "Manages audio quality", advice: "Use AI audio editing tools"},
+                {risk: 7, role: "Copy Editor", description: "Edits written content", advice: "Use AI grammar & style assistant"},
+                {risk: 7, role: "Packaging Designer", description: "Designs packaging", advice: "Use AI eco-design tools"},
+                {risk: 6, role: "Visual Effects Artist", description: "Creates VFX", advice: "Combine with AI VFX pipelines"},
+                {risk: 6, role: "Podcast Producer", description: "Produces audio content", advice: "AI-assisted editing"},
+                {risk: 6, role: "Set Designer", description: "Creates stage sets", advice: "Use AI plan tools"},
+                {risk: 6, role: "Technical Illustrator", description: "Draws diagrams", advice: "AI aids technical diagrams"},
+                {risk: 6, role: "Brand Strategist", description: "Develops brand identity", advice: "Use AI for brand insights"},
+                {risk: 6, role: "Creative Director", description: "Leads creative projects", advice: "Manage AI-human creative teams"},
+                {risk: 6, role: "Multimedia Artist", description: "Creates mixed-media art", advice: "Use AI-assisted tooling"},
+                {risk: 6, role: "Content Strategist", description: "Plans content themes", advice: "AI content analytics focused"},
+                {risk: 5, role: "Event Planner", description: "Organizes events", advice: "Plan with AI logistics"},
+                {risk: 5, role: "Fashion Buyer", description: "Shops fashion inventory", advice: "Use AI trend forecasting"},
+                {risk: 5, role: "UX Copywriter", description: "Writes UI text", advice: "Learn AI-assisted writing"},
+                {risk: 5, role: "Brand Manager", description: "Oversees brand health", advice: "Combine with AI monitoring"},
+                {risk: 5, role: "Digital Marketing Manager", description: "Runs marketing campaigns", advice: "Use AI ad optimization"},
+                {risk: 5, role: "Social Media Designer", description: "Designs social visuals", advice: "Master AI social tools"},
+                {risk: 4, role: "Art Conservator", description: "Preserves fine art", advice: "Human touch + AI inspection"},
+                {risk: 4, role: "Digital Illustrator", description: "Digital drawings", advice: "Add AI customization"},
+                {risk: 4, role: "Visual Merchandiser", description: "Designs in-store visuals", advice: "Use AI analytics"},
+                {risk: 4, role: "Editorial Designer", description: "Publishes books/magazines", advice: "Combine with AI layout tools"},
+                {risk: 3, role: "Voice-over Artist", description: "Provides voice content", advice: "Use AI voice augmentation"},
+                {risk: 2, role: "UI Developer", description: "Implements UI visually", advice: "Blend with AI code generators"}
+            ],
+            business: [
+                {risk: 10, role: "Telecaller", description: "Sales via phone", advice: "Replace with voice AI bots"},
+                {risk: 10, role: "Data Entry Clerk", description: "Inputs business data", advice: "Shift to automation and AI data pipelines"},
+                {risk: 9, role: "Sales Executive", description: "Closes basic deals", advice: "Use AI CRM & lead-gen automation"},
+                {risk: 9, role: "Customer Support Agent", description: "Handles support queries", advice: "Use chatbots & AI triage"},
+                {risk: 9, role: "Telemarketing Manager", description: "Oversees outbound calls", advice: "Replace with intelligent calling platforms"},
+                {risk: 9, role: "Lead Generation Specialist", description: "Finds potential leads", advice: "Use AI-powered lead-gen suites"},
+                {risk: 8, role: "Content Marketer", description: "Writes marketing content", advice: "Use AI content tools + strategy"},
+                {risk: 8, role: "Marketing Analyst", description: "Analyzes trends", advice: "Use AI analytics & dashboards"},
+                {risk: 8, role: "SEO Specialist", description: "Optimizes site visibility", advice: "Use AI SEO tools"},
+                {risk: 8, role: "Email Marketing Specialist", description: "Sends campaigns", advice: "Use AI email personalization"},
+                {risk: 7, role: "Marketing Coordinator", description: "Supports marketing teams", advice: "Master AI workflows & analytics"},
+                {risk: 7, role: "Public Relations Specialist", description: "Manages public image", advice: "Use AI to monitor & respond"},
+                {risk: 7, role: "Digital Marketing Specialist", description: "Executes campaigns", advice: "Master AI campaign ops"},
+                {risk: 7, role: "Advertising Executive", description: "Plans ad layouts", advice: "Use AI ad optimization"},
+                {risk: 7, role: "Product Analyst", description: "Assesses product performance", advice: "Use AI predictive tools"},
+                {risk: 7, role: "Content Strategist", description: "Plans marketing content", advice: "Use AI-driven insights"},
+                {risk: 6, role: "Brand Manager", description: "Builds brand identity", advice: "Integrate AI tracking"},
+                {risk: 6, role: "Social Media Influencer", description: "Promotes brands", advice: "Compete with AI-generated influencers"},
+                {risk: 6, role: "Customer Success Manager", description: "Ensures client satisfaction", advice: "Use AI support systems"},
+                {risk: 6, role: "Event Manager", description: "Coordinates business events", advice: "Use AI logistics"},
+                {risk: 6, role: "Supply Chain Manager", description: "Optimizes supply routes", advice: "Use AI forecasting"},
+                {risk: 6, role: "Sales Manager", description: "Leads sales teams", advice: "Supply AI-powered forecasting"},
+                {risk: 5, role: "Business Analyst", description: "Recommends business strategies", advice: "Use AI for predictive business insight"},
+                {risk: 5, role: "Channel Manager", description: "Manages sales channels", advice: "Use AI distribution analytics"},
+                {risk: 5, role: "E-commerce Manager", description: "Operates online store", advice: "Automate with AI recommendations"},
+                {risk: 5, role: "Account Manager", description: "Manages client relations", advice: "Use AI CRM insights"},
+                {risk: 5, role: "Financial Advisor", description: "Advises on money", advice: "Shift to robo-advising + niche advice"},
+                {risk: 5, role: "Business Development Manager", description: "Grows business", advice: "Use AI prospecting"},
+                {risk: 4, role: "Negotiator", description: "Closes complex deals", advice: "AI offers data support"},
+                {risk: 4, role: "Trade Marketing Manager", description: "Executes trade campaigns", advice: "Use AI analytics"},
+                {risk: 4, role: "PR Manager", description: "Oversees press image", advice: "Use AI media monitoring"},
+                {risk: 4, role: "Retail Manager", description: "Manages store", advice: "Use AI staffing & stock tools"},
+                {risk: 4, role: "Channel Manager", description: "Oversees sales channels", advice: "Use AI insights"},
+                {risk: 3, role: "Brand Strategist", description: "Long-term brand planning", advice: "AI assists strategy"},
+                {risk: 2, role: "Social Media Manager", description: "Plans & creates content", advice: "Use AI automation"},
+                {risk: 2, role: "Product Manager", description: "Coordinates product lifecycle", advice: "Use AI analytics"},
+                {risk: 2, role: "CRM Specialist", description: "Handles CRM systems", advice: "Master AI-driven CRM"},
+                {risk: 2, role: "Sales Operations Manager", description: "Optimizes sales processes", advice: "Use AI forecasting"}
+            ],
+            healthcare: [
+                {risk: 10, role: "Medical Transcriptionist", description: "Converts audio to text", advice: "Fully obsolete – pivot to medical AI systems"},
+                {risk: 10, role: "Radiologist", description: "Interprets medical imaging", advice: "Learn AI radiology tools or switch to interventions"},
+                {risk: 10, role: "Pathologist", description: "Analyzes tissue samples", advice: "Master digital pathology + AI workflows"},
+                {risk: 9, role: "Dermatologist (Image Diagnosis)", description: "Skin disease diagnosis", advice: "Use AI diagnostic aids"},
+                {risk: 9, role: "Clinical Data Entry Clerk", description: "Enters patient data", advice: "Shift to data analytics in healthcare"},
+                {risk: 8, role: "Hospital Admin Coordinator", description: "Manages healthcare operations", advice: "Learn AI hospital systems management"},
+                {risk: 8, role: "Pharmacy Technician", description: "Dispenses medications", advice: "Use AI-driven pharmacy tech"},
+                {risk: 8, role: "Medical Coder & Biller", description: "Codes diagnoses for billing", advice: "Learn AI billing softs like RPA"},
+                {risk: 7, role: "Medical Lab Technician", description: "Processes lab tests", advice: "Automate with AI-enabled lab tech"},
+                {risk: 7, role: "General Physician (GP)", description: "Primary healthcare", advice: "Use AI triage + diagnostic tools"},
+                {risk: 7, role: "Pharmacy Inventory Manager", description: "Manages drug stock", advice: "Use AI forecasting tools"},
+                {risk: 7, role: "Oncology Nurse", description: "Cancer care nursing", advice: "Learn AI treatment planning"},
+                {risk: 6, role: "Clinical Trial Coordinator", description: "Manages clinical trials", advice: "Use AI trial enrollment and analytics"},
+                {risk: 6, role: "Genetic Counselor", description: "Advises on genetic health", advice: "Combine with AI risk predictions"},
+                {risk: 6, role: "Clinical AI Engineer", description: "Develops AI tools for clinics", advice: "High-growth area"},
+                {risk: 6, role: "Biostatistician", description: "Biostat data analysis", advice: "Master AI-enhanced stats tools"},
+                {risk: 6, role: "Health Informatics Specialist", description: "Manages EHR & health data", advice: "Combine with AI analytics"},
+                {risk: 6, role: "Synthetic Biology Scientist", description: "Designs engineered organisms", advice: "Learn AI metabolic pathway tools"},
+                {risk: 5, role: "Pharmacogenomics Analyst", description: "Drug-genome interaction analysis", advice: "Learn AI for personalized medicine"},
+                {risk: 5, role: "Epidemiologist", description: "Studies disease spread", advice: "Use AI modeling & prediction"},
+                {risk: 5, role: "Dietitian", description: "Provides nutrition plans", advice: "Use AI meal planning apps"},
+                {risk: 5, role: "Physical Therapist", description: "Rehab treatment", advice: "Integrate AI-guided rehab systems"},
+                {risk: 4, role: "Medical Device Regulatory Lead", description: "Manages device approvals", advice: "Use AI regulatory path tools"},
+                {risk: 4, role: "Biomedical Engineer", description: "Designs medical devices", advice: "Add AI embedded controls"},
+                {risk: 4, role: "Forensic Toxicologist", description: "Detects toxins", advice: "Learn AI analytical tech"},
+                {risk: 4, role: "Food Technologist", description: "Develops food products", advice: "Use AI formulation tech"},
+                {risk: 4, role: "Medical Imaging Technician", description: "Operates MRI/CT equipment", advice: "Add AI image enhancement skills"},
+                {risk: 4, role: "Telemedicine Physician", description: "Remote care via telehealth", advice: "Role growing with AI-powered triage"},
+                {risk: 4, role: "Health Economist", description: "Models healthcare finances", advice: "Use AI economic tools"},
+                {risk: 4, role: "Patient Advocate", description: "Supports patient rights", advice: "AI can help, but human empathy matters"},
+                {risk: 4, role: "Occupational Therapist", description: "Rehab for better daily function", advice: "Use AI rehab tech"},
+                {risk: 3, role: "Medical Robotics Technician", description: "Maintains surgical robots", advice: "Learn AI + robotics integration"},
+                {risk: 3, role: "Cell Therapy Specialist", description: "Works with cell-based therapies", advice: "Use AI in cell QC"},
+                {risk: 3, role: "Genomic Data Scientist", description: "Analyzes genomic datasets", advice: "High demand; keep ML-focused"},
+                {risk: 3, role: "AI Drug Discovery Scientist", description: "Designs drugs with AI", advice: "Future of pharma; very safe"},
+                {risk: 2, role: "OSCE Educators", description: "Trains med students", advice: "Use AI simulation tools"},
+                {risk: 2, role: "Clinical Trial Data Manager", description: "Manages trial datasets", advice: "Use AI data pipelines"},
+                {risk: 1, role: "Biomedical VR Trainer", description: "Trains med trainees in VR", advice: "Growth in spatial tech"}
+            ],
+            finance: [
+                {risk: 10, role: "Legal Clerk / Paralegal", description: "Assists with legal documentation", advice: "Master AI-legal tools, focus on strategy & negotiation"},
+                {risk: 10, role: "Junior Loan Underwriter", description: "Basic credit decisioning", advice: "Shift to AI-assisted risk modeling"},
+                {risk: 10, role: "Compliance Analyst", description: "Monitors financial rules", advice: "Pivot to AI compliance & governance"},
+                {risk: 9, role: "Contract Reviewer", description: "Reviews contracts", advice: "Learn AI legal review & redlining tools"},
+                {risk: 9, role: "Federal Regulation Lawyer", description: "Legal counsel in regulation", advice: "Use AI for research & focus on advice/strategy"},
+                {risk: 9, role: "Financial Data Entry", description: "Enters transactional data", advice: "Shift to finance data pipelines and AI automation"},
+                {risk: 8, role: "Basic Accountant", description: "Prepares basic books & reports", advice: "Move to AI-assisted accounting systems"},
+                {risk: 8, role: "Tax Preparer", description: "Fills tax returns", advice: "Learn AI tax software & advisory"},
+                {risk: 8, role: "Legal Assistant", description: "Supports lawyers with scheduling & memos", advice: "Pivot to AI-legal workflow design"},
+                {risk: 8, role: "Loan Officer", description: "Personal loan consulting", advice: "Use AI credit scoring systems"},
+                {risk: 7, role: "Standard Auditor", description: "Performs checks & verifications", advice: "Focus on AI-driven fraud forensics"},
+                {risk: 7, role: "Retail Banker", description: "Manages daily banking", advice: "Shift to advisory or fintech roles"},
+                {risk: 7, role: "Financial Advisor", description: "Provides general client advice", advice: "Use robo-advice tools & niche expertise"},
+                {risk: 7, role: "Insurance Broker", description: "Sells insurance policies", advice: "Adopt AI quote & risk systems"},
+                {risk: 7, role: "Trade Finance Specialist", description: "Manages import-export finance", advice: "Use AI for supply-chain risk"},
+                {risk: 6, role: "Quantitative Analyst", description: "Builds financial models", advice: "Learn ML-enriched quant methods"},
+                {risk: 6, role: "AI Loan Underwriter", description: "Builds automated credit models", advice: "Secure. Expand risk modeling skills"},
+                {risk: 6, role: "Financial Crimes Investigator", description: "Detects fraud", advice: "Required: AI anomaly detection skills"},
+                {risk: 6, role: "Portfolio Manager", description: "Manages investments", advice: "Use AI analytics tools"},
+                {risk: 6, role: "Compliance Officer (Senior)", description: "Oversees corporate compliance", advice: "High demand: strong AI-regulatory integration"},
+                {risk: 6, role: "AI Risk Management Specialist", description: "Models financial risk", advice: "Crucial in finance & crossover roles"},
+                {risk: 6, role: "Wealth Manager (AI-enhanced)", description: "Manages client portfolios", advice: "Merge with AI personalization"},
+                {risk: 5, role: "CFO", description: "Oversees financial strategy", advice: "Use AI forecasting & ESG analytics"},
+                {risk: 5, role: "Audit Manager", description: "Leads financial audits", advice: "Use AI for anomaly detection"},
+                {risk: 5, role: "General Counsel", description: "In-house lead lawyer", advice: "Focus on AI law & strategy"},
+                {risk: 5, role: "Chief Risk Officer", description: "Oversees organizational risk", advice: "Enhance with AI risk platforms"},
+                {risk: 5, role: "Chief Compliance Officer", description: "Manages regulations across enterprise", advice: "Vital role: merge regulation with AI systems"},
+                {risk: 4, role: "Regulatory Strategy Consultant", description: "Advises on strategy around laws", advice: "Requires human nuance; AI supports"},
+                {risk: 4, role: "Senior Financial Analyst", description: "Leads finance analysis", advice: "Use AI analytics & visualization tools"},
+                {risk: 4, role: "Internal Auditor", description: "Conducts internal checks", advice: "Integrate AI audit tools"},
+                {risk: 4, role: "Investment Banker", description: "Manages deals & capital raising", advice: "Human negotiation still key"},
+                {risk: 4, role: "Investor Relations Manager", description: "Communicates financials to stakeholders", advice: "High-level human insight"},
+                {risk: 4, role: "Technical Accounting Policy Manager", description: "Sets accounting framework", advice: "Combine rule knowledge & AI"},
+                {risk: 4, role: "AI Compliance Specialist", description: "Monitors AI systems in finance", advice: "Fast-growing niche"},
+                {risk: 4, role: "AI Financial Data Scientist", description: "Mines large-scale datasets", advice: "High-value, technical role"},
+                {risk: 3, role: "AI Policy Advisor", description: "Advises on national/regional AI frameworks", advice: "Emerging strategic role"},
+                {risk: 2, role: "AI Product Manager", description: "Manages AI-powered products", advice: "Strong future demand"},
+                {risk: 2, role: "Fintech UX Designer", description: "Designs AI-enhanced financial apps", advice: "Cross of finance + UX"},
+                {risk: 2, role: "AI-Powered Fraud Detection Specialist", description: "Builds fraud systems", advice: "Growing specialization"},
+                {risk: 1, role: "AI Financial Controller", description: "Oversee finance via AI tools", advice: "Secure niche"}
+            ],
+            education: [
+                {risk: 10, role: "Basic Tutor", description: "Teaches routine subjects", advice: "Switch to AI tutoring platform roles"},
+                {risk: 10, role: "Exam Grader / Marker", description: "Grades student exams", advice: "Automated scoring eliminates this"},
+                {risk: 9, role: "Language Teacher (Adult Basic)", description: "Teaches basic languages", advice: "Use AI translators and tutoring bots"},
+                {risk: 9, role: "Entry-level Instructor", description: "Classroom teacher without tech integration", advice: "Blend AI-driven tools & adaptive learning"},
+                {risk: 8, role: "Curriculum Writer (Generic)", description: "Designs generic learning content", advice: "Use AI to create personalized content"},
+                {risk: 8, role: "Training Coordinator", description: "Coordinates training logistics", advice: "Use L&D software with AI scheduling"},
+                {risk: 7, role: "Corporate Trainer", description: "Delivers corporate courses", advice: "Use AI simulations & virtual coaching"},
+                {risk: 7, role: "Instructional Designer", description: "Creates learning materials", advice: "Use AI to tailor content for learners"},
+                {risk: 7, role: "Online Course Instructor", description: "Teaches remote courses", advice: "Automate via AI-powered LMS"},
+                {risk: 6, role: "Educational Consultant", description: "Advises schools on learning", advice: "Include AI ed-tech platforms"},
+                {risk: 6, role: "Special Ed Teacher", description: "Supports special needs students", advice: "AI assistive tech can help but not fully replace"},
+                {risk: 6, role: "Montessori Teacher", description: "Guides via Montessori methods", advice: "AI tangential; focus on human aspects"},
+                {risk: 6, role: "School Counselor", description: "Advises student issues", advice: "AI chatbots may help, but empathy matters"},
+                {risk: 5, role: "Learning Experience Designer", description: "Designs learner journeys", advice: "Use AI analytics in learning path development"},
+                {risk: 5, role: "EdTech Developer", description: "Builds educational software", advice: "Integrate AI systems"},
+                {risk: 5, role: "Assessment Specialist", description: "Designs tests & assessments", advice: "Shift to AI-driven adaptive testing"},
+                {risk: 4, role: "University Lecturer", description: "Teaches university subjects", advice: "Use AI tutors & create hybrid models"},
+                {risk: 4, role: "K–12 Teacher", description: "Primary school educators", advice: "Blend AI tutors & teach critical thinking"},
+                {risk: 4, role: "Educational Psychologist", description: "Studies learning behaviors", advice: "Use AI behavior analytics"},
+                {risk: 4, role: "ESL Teacher", description: "English as Second Language teacher", advice: "Use AI translation assistants"},
+                {risk: 4, role: "Corporate Learning Manager", description: "Manages employee training", advice: "Use AI learning platforms"},
+                {risk: 3, role: "EdTech Product Manager", description: "Oversees educational tools", advice: "High demand in AI ed-tech space"},
+                {risk: 3, role: "Virtual Classroom Developer", description: "Builds live learning platforms", advice: "Combine VR + AI teaching assistants"},
+                {risk: 3, role: "AI Education Specialist", description: "Implements AI in schools", advice: "Growth role as schools adopt AI systems"},
+                {risk: 2, role: "Game-based Learning Designer", description: "Creates learning games", advice: "Use AI to adapt gameplay to learning data"},
+                {risk: 2, role: "VR/AR Education Designer", description: "Creates immersive learning experiences", advice: "Spatial computing + AI"},
+                {risk: 1, role: "Chief Education Officer", description: "Leads educational institutions", advice: "Strategic AI adoption leadership"}
+            ],
+            emerging: [
+                {risk: 10, role: "AI Ethics Auditor", description: "Reviews AI systems for rights & bias", advice: "High demand; legal + technical blend required"},
+                {risk: 9, role: "AI Policy Advisor", description: "Guides governmental AI laws", advice: "Interdisciplinary niche growing rapidly"},
+                {risk: 9, role: "Chief AI Officer (CAIO)", description: "C-suite AI strategy leader", advice: "Executive path; critical role"},
+                {risk: 8, role: "AI Governance Manager", description: "Implements AI policies in companies", advice: "Essential as AI regulations expand"},
+                {risk: 8, role: "Quantum Algorithm Developer", description: "Builds quantum computing algorithms", advice: "In high demand per projections"},
+                {risk: 8, role: "Quantum Firmware Engineer", description: "Integrates firmware with quantum hardware", advice: "Fast-growing field"},
+                {risk: 7, role: "BCI Engineer (Brain-Computer Interface)", description: "Develops human-AI neural interfaces", advice: "Frontier tech, future-proof"},
+                {risk: 7, role: "Quantum AI Research Scientist", description: "Merges quantum computing & AI", advice: "Explainable research role appearing soon"},
+                {risk: 7, role: "Ethical AI Tools Developer", description: "Builds tools to detect bias & harm in AI", advice: "Foundational for compliance-driven AI"},
+                {risk: 7, role: "AI Safety Engineer", description: "Ensures AI systems are safe", advice: "Human oversight for AGI systems necessary"},
+                {risk: 6, role: "Synthetic Biology Data Scientist", description: "Designs using AI-driven biology models", advice: "Explosive growth in biotech"},
+                {risk: 6, role: "Edge AI Hardware Engineer", description: "Builds AI chips/devices", advice: "AI moves to edge; roles critical"},
+                {risk: 6, role: "AI Agent Architect", description: "Designs autonomous multi-step AI agents", advice: "High demand as agents go mainstream"},
+                {risk: 6, role: "Spatial Computing Designer", description: "Designs AR/VR worlds with AI", advice: "Apple Vision, Meta tapping in"},
+                {risk: 6, role: "AI Hardware Integration Engineer", description: "Embeds AI in real-world devices", advice: "IoT meets AI; rapid growth"},
+                {risk: 5, role: "Sustainability Tech Developer", description: "Balances AI & green tech", advice: "Vital for ESG AI systems"},
+                {risk: 5, role: "Smart City AI Planner", description: "Designs city tech like traffic and services", advice: "AI + urban planning merging"},
+                {risk: 4, role: "Robot Ethics Specialist", description: "Ensures robots abide by ethical rules", advice: "Needed as robotics advance"},
+                {risk: 4, role: "Digital Twin Engineer", description: "Builds simulated models of systems", advice: "Cross-domain AI modeler role"},
+                {risk: 4, role: "Quantum Security Specialist", description: "Secures quantum communications", advice: "Critical upcoming cybersecurity domain"},
+                {risk: 4, role: "RegTech Developer", description: "Builds regulatory automation tools", advice: "Fintech importance; regulation needed"},
+                {risk: 4, role: "AI-Assisted Medical Device Designer", description: "Designs such devices", advice: "Merges biotech, hardware & AI"},
+                {risk: 3, role: "Climate AI Modeler", description: "Predicts weather/climate via AI", advice: "Need growing fast"},
+                {risk: 3, role: "Autonomous Vehicle Engineer", description: "Develops self-driving cars", advice: "Agent + robotics + AI fusion"},
+                {risk: 3, role: "AI Cyber Defense Engineer", description: "Defends AI systems", advice: "High importance"},
+                {risk: 3, role: "Audio AI Engineer", description: "Builds AI for sound", advice: "Voice and audio AI growing"},
+                {risk: 2, role: "AI-Powered UX Researcher", description: "Uses AI in UX insights", advice: "Human perspective with AI insight"},
+                {risk: 2, role: "VR/AR Game Designer (AI integrated)", description: "Creates immersive games", advice: "Combine spatial + AI experience"},
+                {risk: 1, role: "AI Workflows Consultant", description: "Designs company AI automations", advice: "Help businesses implement AI"},
+                {risk: 1, role: "AI Training Data Specialist", description: "Curates datasets for AI", advice: "Essential and stable role"}
+            ]
+        };
+        
+        // Icons for each section
+        const sectionIcons = {
+            tech: "fas fa-laptop-code",
+            design: "fas fa-paint-brush",
+            business: "fas fa-briefcase",
+            healthcare: "fas fa-heartbeat",
+            finance: "fas fa-chart-line",
+            education: "fas fa-graduation-cap",
+            emerging: "fas fa-rocket"
+        };
+        
+        // Section titles
+        const sectionTitles = {
+            tech: "Tech & Software",
+            design: "Design & Creative",
+            business: "Business & Marketing",
+            healthcare: "Healthcare & Biotech",
+            finance: "Finance & Legal",
+            education: "Education & Training",
+            emerging: "Emerging/Hybrid Roles"
+        };
+        
+        // Current active tab
+        let currentTab = 'tech';
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load initial data
+            loadJobs(currentTab);
+            
+            // Set up tab click handlers
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Get the tab to show
+                    currentTab = this.getAttribute('data-tab');
+                    
+                    // Update section title
+                    updateSectionTitle(currentTab);
+                    
+                    // Load the jobs for this tab
+                    loadJobs(currentTab);
+                });
+            });
+            
+            // Set up search functionality
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterJobs();
+            });
+            
+            // Set up risk filter
+            document.getElementById('riskFilter').addEventListener('change', function() {
+                filterJobs();
+            });
+        });
+        
+        // Load jobs for a specific tab
+        function loadJobs(tab) {
+            const tbody = document.getElementById('jobTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            jobData[tab].forEach(job => {
+                const row = document.createElement('tr');
+                row.classList.add('fade-in');
+                
+                // Determine risk class
+                let riskClass = '';
+                if (job.risk >= 8) riskClass = 'risk-high';
+                else if (job.risk >= 5) riskClass = 'risk-medium';
+                else riskClass = 'risk-low';
+                
+                row.innerHTML = `
+                    <td class="risk-cell risk-${job.risk} ${riskClass}" data-risk="${job.risk}">${job.risk}</td>
+                    <td>
+                        <div class="job-title">${job.role}</div>
+                        <div class="job-description">${job.description}</div>
+                    </td>
+                    <td class="pivot-advice">${job.advice}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Apply any active filters
+            filterJobs();
+        }
+        
+        // Filter jobs based on search and risk filter
+        function filterJobs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const riskFilter = document.getElementById('riskFilter').value;
+            
+            document.querySelectorAll('#jobTable tbody tr').forEach(row => {
+                const role = row.querySelector('.job-title').textContent.toLowerCase();
+                const description = row.querySelector('.job-description').textContent.toLowerCase();
+                const advice = row.querySelector('.pivot-advice').textContent.toLowerCase();
+                const risk = parseInt(row.querySelector('.risk-cell').getAttribute('data-risk'));
+                
+                // Check if matches search term
+                const matchesSearch = role.includes(searchTerm) || 
+                                     description.includes(searchTerm) || 
+                                     advice.includes(searchTerm);
+                
+                // Check if matches risk filter
+                let matchesRisk = true;
+                if (riskFilter === 'high') matchesRisk = risk >= 8;
+                else if (riskFilter === 'medium') matchesRisk = risk >= 5 && risk <= 7;
+                else if (riskFilter === 'low') matchesRisk = risk <= 4;
+                
+                // Show/hide row based on filters
+                if (matchesSearch && matchesRisk) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        // Update section title with icon
+        function updateSectionTitle(tab) {
+            const sectionTitle = document.getElementById('currentSection');
+            sectionTitle.innerHTML = `
+                <i class="${sectionIcons[tab]}"></i> ${sectionTitles[tab]}
+            `;
+            sectionTitle.classList.add('fade-in');
+            
+            // Remove fade-in class after animation completes
+            setTimeout(() => {
+                sectionTitle.classList.remove('fade-in');
+            }, 500);
+        }
+    </script>
+</body>
+</html>
