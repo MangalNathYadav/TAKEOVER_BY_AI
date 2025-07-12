@@ -360,6 +360,7 @@ Contributions especially welcome for:
 - Regional job market variations
 
 ## �🙏 Credits 
+- Web version create by Deepseek R1
 - Improved by Claude Sonnet 3.7
 - Generated with ChatGPT-4o
 - Markdown conversion by Deepseek
